@@ -405,6 +405,9 @@ export function updateContext<TContext, TEvent extends EventObject>(
   assignActions: Array<AssignAction<TContext, TEvent>>,
   state?: State<TContext, TEvent>
 ): TContext {
+  if (!IS_PRODUCTION) {
+    warn(!!context, 'Attempting to update undefined context');
+  }
   const updatedContext = context
     ? assignActions.reduce((acc, assignAction) => {
         const { assignment } = assignAction as AssignAction<TContext, TEvent>;
@@ -520,23 +523,8 @@ export function isObservable<T>(
   }
 }
 
-export function createSymbolObservable(): symbol | string {
-  let result;
-
-  if (typeof Symbol === 'function') {
-    if (Symbol.observable) {
-      result = Symbol.observable;
-    } else {
-      result = Symbol('observable');
-      // @ts-ignore
-      Symbol.observable = result;
-    }
-  } else {
-    result = '@@observable';
-  }
-
-  return result;
-}
+export const symbolObservable = (() =>
+  (typeof Symbol === 'function' && Symbol.observable) || '@@observable')();
 
 export function isMachine(value: any): value is StateMachine<any, any, any> {
   try {
@@ -607,18 +595,23 @@ export function toTransitionConfigArray<TContext, TEvent extends EventObject>(
       typeof transitionLike === 'string' ||
       isMachine(transitionLike)
     ) {
+      // @ts-ignore until Type instantiation is excessively deep and possibly infinite bug is fixed
       return { target: transitionLike, event };
     }
 
     return { ...transitionLike, event };
-  });
+  }) as Array<
+    TransitionConfig<TContext, TEvent> & {
+      event: TEvent['type'] | NullEvent['type'] | '*';
+    } // TODO: fix 'as' (remove)
+  >;
 
   return transitions;
 }
 
-export function normalizeTarget<TContext>(
-  target: SingleOrArray<string | StateNode<TContext>> | undefined
-): Array<string | StateNode<TContext>> | undefined {
+export function normalizeTarget<TContext, TEvent extends EventObject>(
+  target: SingleOrArray<string | StateNode<TContext, any, TEvent>> | undefined
+): Array<string | StateNode<TContext, any, TEvent>> | undefined {
   if (target === undefined || target === TARGETLESS_KEY) {
     return undefined;
   }

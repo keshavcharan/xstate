@@ -62,7 +62,7 @@ const selectEvent = {
 This event will be handled at the top-level, so that whenever the `'SELECT'` event occurs, the machine will:
 
 - [transition](../guides/transitions.md) to its child `'.selected'` state (notice the dot, which indicates a [relative target](../guides/ids.md#relative-targets))
-- [assign](../guides/context.md#updating-context-with-assign) `context.subreddit` to the `event.name`
+- [assign](../guides/context.md#updating-context-with-assign) `event.name` to the `context.subreddit`
 
 ```js {10-17}
 const redditMachine = Machine({
@@ -87,7 +87,7 @@ const redditMachine = Machine({
 
 ## Async Flow
 
-When a subreddit is selected (that is, when the machine is in the `'selected'` state due to a `'SELECT'` event), the machine should start loading the subreddit data. To do this, we [invoke a Promise](../guides/invoke.md#invoking-promises) that will resolve with the selected subreddit data:
+When a subreddit is selected (that is, when the machine is in the `'selected'` state due to a `'SELECT'` event), the machine should start loading the subreddit data. To do this, we [invoke a Promise](../guides/communication.html#invoking-promises) that will resolve with the selected subreddit data:
 
 ```js {1-7,14-17}
 function invokeFetchSubreddit(context) {
@@ -406,7 +406,7 @@ const App = () => {
   return (
     <main>
       <header>{/* ... */}</header>
-      {subreddit && <Subreddit name={subreddit} key={subreddit} />}
+      {subreddit && <Subreddit name={subreddit} key={subreddit.id} />}
     </main>
   );
 };
@@ -537,4 +537,18 @@ The differences between using the actor model above and just using machines with
 - The UI framework layer (e.g., React) becomes a plain view layer; logic and side-effects are not tied directly to the UI, except where it is appropriate.
 - The `redditMachine` → `subredditMachine` actor hierarchy is "self-sustaining", and allows for the logic to be transferred to any UI framework, or even no framework at all!
 
+## React Demo
+
 <iframe src="https://codesandbox.io/embed/xstate-react-reddit-example-with-actors-5g9nu?fontsize=14" title="XState React Reddit Example with Actors" allow="geolocation; microphone; camera; midi; vr; accelerometer; gyroscope; payment; ambient-light-sensor; encrypted-media; usb" style="width:100%; height:500px; border:0; border-radius: 4px; overflow:hidden;" sandbox="allow-modals allow-forms allow-popups allow-scripts allow-same-origin"></iframe>
+
+## Vue Demo
+
+Unsurprisingly, the same machines can be used in a Vue app that exhibits the exact same behavior (thanks to [Chris Hannaby](https://github.com/chrishannaby)):
+
+<iframe
+  src="https://codesandbox.io/embed/xstate-vue-reddit-example-with-actors-uvu14?fontsize=14"
+  style="width:100%; height:500px; border:0; border-radius: 4px; overflow:hidden;"
+  title="XState Vue Reddit Example with Actors"
+  allow="geolocation; microphone; camera; midi; vr; accelerometer; gyroscope; payment; ambient-light-sensor; encrypted-media; usb"
+  sandbox="allow-modals allow-forms allow-popups allow-scripts allow-same-origin"
+></iframe>

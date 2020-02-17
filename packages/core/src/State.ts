@@ -44,7 +44,9 @@ export function stateValuesEqual(
   );
 }
 
-export function isState(state: object | string): state is State<any> {
+export function isState<TContext, TEvent extends EventObject>(
+  state: object | string
+): state is State<TContext, TEvent> {
   if (isString(state)) {
     return false;
   }
@@ -77,7 +79,7 @@ export class State<
   TContext,
   TEvent extends EventObject = EventObject,
   TStateSchema extends StateSchema<TContext> = any,
-  TState extends Typestate<TContext> = any
+  TTypestate extends Typestate<TContext> = any
 > {
   public value: StateValue;
   public context: TContext;
@@ -100,9 +102,13 @@ export class State<
    */
   public changed: boolean | undefined;
   /**
+   * Indicates whether the state is a final state.
+   */
+  public done: boolean | undefined;
+  /**
    * The enabled state nodes representative of the state value.
    */
-  public configuration: Array<StateNode<TContext>>;
+  public configuration: Array<StateNode<TContext, any, TEvent>>;
   /**
    * The next events that will cause a transition from the current state.
    */
@@ -235,6 +241,7 @@ export class State<
     this.configuration = config.configuration;
     this.transitions = config.transitions;
     this.children = config.children;
+    this.done = !!config.done;
 
     Object.defineProperty(this, 'nextEvents', {
       get: () => {
@@ -274,14 +281,11 @@ export class State<
    * Whether the current state value is a subset of the given parent state value.
    * @param parentStateValue
    */
-  public matches<TSV extends TState['value']>(
+  public matches<TSV extends TTypestate['value']>(
     parentStateValue: TSV
-  ): this is State<
-    (TState & { value: TSV })['context'],
-    TEvent,
-    TStateSchema,
-    TState
-  > {
+  ): this is TTypestate extends { value: TSV }
+    ? State<TTypestate['context'], TEvent, TStateSchema, TTypestate>
+    : never {
     return matchesState(parentStateValue as StateValue, this.value);
   }
 }
